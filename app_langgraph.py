@@ -17,10 +17,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # Alternative: from langchain_openai import AzureChatOpenAI
 
 # Direct imports from your existing modules
-from deduplication import find_near_duplicates
-from featurizer import custom_featurizer
-from issues import find_issues
-from pipeline import make_step, run_pipeline
+from pipeline.deduplication import find_near_duplicates
+from pipeline.featurizer import custom_featurizer
+from pipeline.issues import find_issues
+from pipeline.pipeline import make_step, run_pipeline
+
+
 from ecg_analyzer import ECGAnalyzer
 
 # ============================================================================

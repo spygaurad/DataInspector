@@ -42,9 +42,15 @@ from tqdm.auto import tqdm
 from dataclasses import dataclass
 import gradio as gr
 # Direct imports (your existing modules)
-from deduplication import find_near_duplicates
-from featurizer import custom_featurizer
-from issues import find_issues
+
+
+from pipeline.deduplication import find_near_duplicates
+from pipeline.featurizer import custom_featurizer
+from pipeline.issues import find_issues
+from pipeline.pipeline import make_step, run_pipeline
+
+
+
 from pipeline import make_step, run_pipeline
 
 # ============================================================================

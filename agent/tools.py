@@ -276,7 +276,6 @@ def tool_propose_plan(
         "keyword_hits": hits,
     }
 
-
 @tool("run_step", return_direct=True)
 def tool_run_step(name: str, params_json: str = "") -> Dict[str, Any]:
     """
@@ -318,6 +317,8 @@ def tool_run_step(name: str, params_json: str = "") -> Dict[str, Any]:
         "stats": compact_stats,   # small dict only
         "note": "Dataset updated in runtime context; use list_versions/reset_to_version if needed."
     }
+
+
 
 # ---------------------------
 # Optional helpers for version control from chat/agent

@@ -1,16 +1,17 @@
 from __future__ import annotations
- 
+
 from typing import Any, Dict, List, Optional, Tuple
- 
+
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
-from utils import PhaseProgress
- 
- 
+
+from .utils_cool import PhaseProgress
+
+
 def _safe_apply_pipeline(
     group_name: str,
     df_in: pd.DataFrame,

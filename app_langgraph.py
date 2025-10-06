@@ -12,9 +12,7 @@ from datetime import datetime
 
 # LangGraph and LLM imports
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolExecutor
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 # Alternative: from langchain_openai import AzureChatOpenAI
 

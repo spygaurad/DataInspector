@@ -1,20 +1,25 @@
-import gradio as gr
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from typing import Optional, Tuple, List, Callable, Dict, Any
-import io
 import base64
+import io
+from typing import Any, Dict, List, Optional, Tuple
+
+import gradio as gr
+import matplotlib.pyplot as plt
+import pandas as pd
+from dotenv import load_dotenv
 from tqdm.auto import tqdm
-import time
+
+from agent.ChatbotHandler import ChatbotHandler
 
 # ============================================================================
 # DIRECT IMPORTS
 # ============================================================================
-from deduplication import find_near_duplicates
-from featurizer import custom_featurizer
-from issues import find_issues
-from pipeline import make_step, run_pipeline
+from pipeline.deduplication import find_near_duplicates
+from pipeline.featurizer import custom_featurizer
+from pipeline.issues import find_issues
+from pipeline.pipeline import make_step, run_pipeline
+
+load_dotenv()
+
 # ============================================================================
 
 # ============================================================================
@@ -66,32 +71,6 @@ class DataAnalyzer:
             return f"✓ Exact Deduplication: Removed {duplicates_removed} duplicate rows.", df_dedup
         except Exception as e:
             return f"✗ Error during deduplication: {str(e)}", df
-
-# ============================================================================
-# CHATBOT HANDLER
-# ============================================================================
-class ChatbotHandler:
-    def __init__(self):
-        self.context = {}
-    def update_context(self, file_path, data_type, df):
-        self.context.update({"file": file_path, "type": data_type, "df": df})
-    def respond(self, message: str, history: List):
-        if history is None: history = []
-        if not message or message.strip() == "":
-            return history, ""
-        df = self.context.get("df")
-        if "column" in message.lower():
-            response = (f"The dataset has {len(df.columns)} columns: {', '.join(map(str, df.columns))}"
-                        if df is not None else "Please upload a file.")
-        elif "row" in message.lower():
-            response = (f"The dataset has {len(df)} rows." if df is not None else "Please upload a file.")
-        elif "help" in message.lower():
-            response = "Ask about 'columns' or 'rows' in your data."
-        else:
-            response = (f"I understand you said '{message}'. Currently analyzing: "
-                        f"{self.context.get('type') or 'No data'}. Type 'help' for options.")
-        history.append((message, response))
-        return history, ""
 
 # ============================================================================
 # MAIN APPLICATION
@@ -297,21 +276,26 @@ def create_interface():
                     gr.update(visible=True),         # pipeline_tabs (still show tabs)
                     gr.update(value="<p>Please upload a valid CSV file</p>", visible=True)  # html
                 )
-            app.chatbot.update_context(file.name if file else None, current_data_type, df)
+
+            boot_text = app.chatbot.update_context(file.name if file else None, current_data_type, df)
             col_choices = list(map(str, df.columns))
+
+            seeded_history = [(None, boot_text or "Dataset loaded and inspected.")]  # bot-only first row
+
             return (
-                status,
-                gr.update(value=df.head(200)),                                  # show some rows right away
-                gr.update(choices=col_choices, value=None, visible=True, interactive=False),  # visible but disabled
-                gr.update(visible=True),                                        # show label group frame
-                gr.update(visible=True),                                        # tabs visible
-                gr.update(value="", visible=False)                              # clear HTML if any
+                status,                                                # keep status as load message
+                gr.update(value=df.head(200)),
+                gr.update(choices=col_choices, value=None, visible=True, interactive=False),
+                gr.update(visible=True),
+                gr.update(visible=True),
+                gr.update(value="", visible=False),
+                gr.update(value=seeded_history),                       # ← seed chat history
             )
 
         file_upload.change(
             fn=on_upload,
             inputs=[file_upload, data_type_dropdown],
-            outputs=[status_box, original_df_output, label_dropdown, label_group, pipeline_tabs, html_output_display]
+            outputs=[status_box, original_df_output, label_dropdown, label_group, pipeline_tabs, html_output_display, chatbot]
         )
 
         # 2) Tasks change: enable/disable (don’t hide) the label dropdown

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, Dict, Any, List
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
-
 from sklearn.linear_model import LogisticRegression, SGDRegressor
-
-from utils import PhaseProgress, _ensure_dense32, _infer_task
 from tqdm.auto import tqdm
-from scipy.sparse import issparse
+
+from .utils_cool import PhaseProgress, _ensure_dense32, _infer_task
+
 
 def find_issues(
     df: pd.DataFrame,

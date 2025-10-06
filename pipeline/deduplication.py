@@ -3,19 +3,18 @@ from __future__ import annotations
 from time import perf_counter
 from typing import Any, Dict, List, Optional, Tuple
 
-import math
 import numpy as np
 import pandas as pd
+from cleanlab import Datalab
+from cleanlab.datalab.internal.issue_manager.duplicate import NearDuplicateIssueManager
+from scipy.sparse import issparse
 from scipy.special import comb
 from sklearn.base import TransformerMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
-
 from tqdm.auto import tqdm
 
-from cleanlab import Datalab
-from cleanlab.datalab.internal.issue_manager.duplicate import NearDuplicateIssueManager
-from utils import PhaseProgress, choose_k, _ensure_dense32
-from scipy.sparse import issparse
+from .utils_cool import PhaseProgress, _ensure_dense32, choose_k
+
 
 # =========================
 # Core near-duplicate finder
@@ -31,7 +30,6 @@ def find_near_duplicates(
     vectorizer: Optional[TransformerMixin] = None,
     force_dense: bool = False,   # set True if your cleanlab version needs dense
     # Behavior
-    remove_duplicates: bool = True,
     verbose: bool = False,
     # Progress: either a tqdm object or a callable phase,p in [0,1]
     progress: Optional[Any] = None,
@@ -53,8 +51,6 @@ def find_near_duplicates(
         Any transformer with fit_transform/transform. If None, uses TF-IDF (float32).
     force_dense : bool
         If True, densify features before passing to Cleanlab.
-    remove_duplicates : bool
-        If True, keep one representative per group; else return None for output_df.
     verbose : bool
         Print timing breakdown.
     progress : tqdm or Callable[[str, float], None]
@@ -63,7 +59,7 @@ def find_near_duplicates(
     Returns
     -------
     (output_df, stats)
-        output_df : DataFrame after deduplication (or None if remove_duplicates=False)
+        output_df : DataFrame after deduplication
         stats     : dict of counts/timings/params
     """
     # Progress setup (one bar per call unless user provided one)
@@ -119,7 +115,7 @@ def find_near_duplicates(
 
     try:
         ndm.find_issues(features=X)
-    except Exception as e:
+    except Exception:
         if issparse(X):
             X_dense = _ensure_dense32(X)
             ndm.find_issues(features=X_dense)  # retry dense
@@ -142,14 +138,13 @@ def find_near_duplicates(
     keep_set = set(reps) | (set(range(N)) - in_any)
 
     out_df = None
-    if remove_duplicates:
-        if N > 0:
-            keep_mask = np.zeros(N, dtype=bool)
-            if keep_set:
-                keep_mask[list(keep_set)] = True
-            out_df = df.iloc[np.where(keep_mask)[0]].copy()
-        else:
-            out_df = df.copy()
+    if N > 0:
+        keep_mask = np.zeros(N, dtype=bool)
+        if keep_set:
+            keep_mask[list(keep_set)] = True
+        out_df = df.iloc[np.where(keep_mask)[0]].copy()
+    else:
+        out_df = df.copy()
 
     # Stats
     n_groups = sum(1 for g in near_dup_sets if np.size(g) > 0)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
+import pandas as pd
 from langchain.tools import tool
 from langchain_community.tools.tavily_search import TavilySearchResults
 
@@ -10,20 +11,13 @@ from pipeline.deduplication import find_near_duplicates
 from pipeline.featurizer import custom_featurizer
 from pipeline.issues import find_issues
 from pipeline.utils_cool import (
-    df_from_payload,
-    df_to_payload,
     get_signature_dict,
     guess_task_and_label,
 )
 
 from .runtime_ctx import (
     get_df_payload,  # now supports version spec (None|'current'|'prev'|'base'|'@-1'|int)
-    get_df_summary,
-    get_sota_bundled,
-    set_df_payload,  # commit new dataset version (or replace)
-    set_df_summary,
-    set_sota_bundled,
-)
+    )
 from .runtime_ctx import (
     list_versions as _list_versions_state,
 )
@@ -40,7 +34,7 @@ STEP_FUNCS = {
 
 
 @tool("inspect_dataset", return_direct=True)
-def tool_inspect_dataset() -> Dict[str, Any]:
+def tool_inspect_dataset(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Summarize the CURRENT dataset (no arguments required).
 
@@ -59,18 +53,16 @@ def tool_inspect_dataset() -> Dict[str, Any]:
         "issues": [ ... ]  # e.g., missing labels, single-class, etc.
       }
     """
-    df_payload = get_df_payload()  # default: current version
-    if df_payload is None:
+    if df is None:
         raise RuntimeError("inspect_dataset: no dataset available in runtime context.")
-    df = df_from_payload(df_payload)
     summary = guess_task_and_label(df)
     # keep context fresh for downstream tools
-    set_df_summary(summary)
     return {"type": "dataset_summary", **summary}
 
 
 @tool("sota_preprocessing", return_direct=True)
 def tool_sota_preprocessing(
+    df_summary: Dict[str, Any],
     task: Optional[str] = None,
     modality: Optional[str] = None,
     domain: Optional[str] = None,
@@ -98,7 +90,6 @@ def tool_sota_preprocessing(
         "results": <first tavily-results batch>
       }
     """
-    df_summary = get_df_summary() or {}
     if not task:
         task = df_summary.get("task_guess") or "classification"
 
@@ -139,7 +130,6 @@ def tool_sota_preprocessing(
     flat_first = bundled[0]["results"] if (bundled and "results" in bundled[0]) else []
 
     # persist for planning
-    set_sota_bundled(bundled)
 
     return {
         "type": "sota",
@@ -189,6 +179,8 @@ def tool_list_steps() -> Dict[str, Any]:
 
 @tool("propose_plan", return_direct=True)
 def tool_propose_plan(
+    df_summary: Dict[str, Any],
+    bundled: List[Dict[str, Any]],
     task: Optional[str] = None,
     modality: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -196,9 +188,6 @@ def tool_propose_plan(
     Propose an ordered preprocessing plan grounded in SOTA + dataset summary.
     (Planning only — does not execute steps.)
     """
-    df_summary = get_df_summary() or {}
-    bundled = get_sota_bundled() or []
-
     if not task:
         task = df_summary.get("task_guess") or "classification"
     label_guess = df_summary.get("label_guess")
@@ -278,13 +267,12 @@ def tool_propose_plan(
 
 
 @tool("run_step", return_direct=True)
-def tool_run_step(name: str, params_json: str = "") -> Dict[str, Any]:
+def tool_run_step(df: pd.DataFrame, name: str, params_json: str = "") -> Dict[str, Any]:
     """
     Execute a single pipeline step on the CURRENT dataset (no df argument).
     Returns ONLY a compact summary; the updated df is stored in runtime context.
     """
-    df_payload = get_df_payload()
-    if df_payload is None:
+    if df is None:
         raise RuntimeError("run_step: no dataset available in runtime context.")
     if name not in STEP_FUNCS:
         raise ValueError(f"Unknown step '{name}'. Available: {list(STEP_FUNCS)}")
@@ -293,13 +281,9 @@ def tool_run_step(name: str, params_json: str = "") -> Dict[str, Any]:
     if not isinstance(params, dict):
         raise ValueError("params_json must decode to a JSON object")
 
-    df = df_from_payload(df_payload)
     df_out, stats = STEP_FUNCS[name](df=df, **params)
     df_next = df_out if df_out is not None else df
-
-    # ✅ update runtime dataset, but DO NOT send it back in the tool message
-    set_df_payload(df_to_payload(df_next))
-
+    
     # Build a tiny, safe summary for the model
     shape_before = (len(df), len(df.columns))
     shape_after  = (len(df_next), len(df_next.columns))

@@ -214,8 +214,8 @@ def create_interface():
     .preview-table td { padding: 6px; border-bottom: 1px solid #ddd; }
     """
 
-    with gr.Blocks(theme=gr.themes.Soft(), title="Medical Data Analysis Platform", css=custom_css, elem_id="main-block") as interface:
-        gr.Markdown("# 🏥 Medical Data Analysis Platform", elem_classes=["topbar"])
+    with gr.Blocks(theme=gr.themes.Soft(), title="DataLineMedical Data Analysis Platform", css=custom_css, elem_id="main-block") as interface:
+        gr.Markdown("# 🏥 Data Line Medical Data Analysis Platform", elem_classes=["topbar"])
 
         # --- Compact top bar ---
         with gr.Row(elem_classes=["topbar"]):

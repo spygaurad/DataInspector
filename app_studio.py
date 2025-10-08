@@ -451,7 +451,7 @@ def create_interface():
     
     with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), title="Medical Data Analysis Platform") as demo:
         with gr.Column(elem_id="app-container"):
-            gr.Markdown("# 🏥 Medical Data Analysis Platform")
+            gr.Markdown("# 🏥 DataLine: Medical Data Analysis Platform")
             with gr.Row():
                 file_input = gr.File(label="Upload CSV", file_types=[".csv"], scale=2)
                 data_type = gr.Dropdown(choices=["EHR Data", "ECG Data"], value="EHR Data", label="Data Type", scale=1)

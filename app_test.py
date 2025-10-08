@@ -656,7 +656,7 @@ def create_interface():
         
         with gr.Column(elem_id="app-container"):
             # Header
-            gr.Markdown("# 🏥 Medical Data Analysis Platform", elem_classes=["compact-header"])
+            gr.Markdown("# 🏥 DataLine: Medical Data Analysis Platform", elem_classes=["compact-header"])
             
             # Top controls
             with gr.Row():

@@ -9,7 +9,8 @@ from agent.agent_graph import build_app
 from pipeline.utils_cool import df_to_payload, parse_user_choice
 
 from .runtime_ctx import get_df_summary
-
+from dotenv import load_dotenv
+load_dotenv()
 
 class ChatbotHandler:
     def __init__(self):

@@ -70,8 +70,11 @@ orjson==3.11.3
 ormsgpack==1.10.0
 packaging==25.0
 pandas==2.3.3
+pandoc==2.4
 pillow==10.4.0
 plotly==6.3.1
+plumbum==1.9.0
+ply==3.11
 propcache==0.4.0
 proto-plus==1.26.1
 protobuf==6.32.1
@@ -83,12 +86,14 @@ pydantic-settings==2.11.0
 pydantic_core==2.27.2
 pydub==0.25.1
 Pygments==2.19.2
+pypandoc==1.15
 pyparsing==3.2.5
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-multipart==0.0.20
 pytz==2025.2
 PyYAML==6.0.3
+reportlab==4.4.4
 requests==2.32.5
 requests-toolbelt==1.0.0
 rich==14.1.0
